@@ -62,6 +62,9 @@ need to research from the start.")
 (defvar isearch-project-run-advice t
   "Flag to check if run advice.")
 
+(defvar isearch-project-thing-at-point ""
+  "Record down the symbol while executing `isearch-project-forward-symbol-at-point' command.")
+
 
 (defun isearch-project-prepare ()
   "Incremental search preparation."
@@ -79,37 +82,18 @@ need to research from the start.")
     prepare-success))
 
 
-(define-key isearch-mode-map (kbd "C-s") #'isearch-project-forward-symbol-at-point)
-(define-key isearch-mode-map (kbd "C-r") #'isearch-project-backward-symbol-at-point)
-
-;;;###autoload
-(defun isearch-project-backward-symbol-at-point ()
-  "Incremental search backward at current point in the project."
-  (interactive)
-  (isearch-project-symbol-at-point 'backward))
-
 ;;;###autoload
 (defun isearch-project-forward-symbol-at-point ()
   "Incremental search forward at current point in the project."
   (interactive)
-  (isearch-project-symbol-at-point 'forward))
-
-(defun isearch-project-symbol-at-point (&optional dt)
-  "Incremental search at current point in the project.
-DT : search direction."
-  (if (isearch-project-prepare)
-      (progn
-        (isearch-project-add-advices)
-        (isearch-forward-symbol-at-point)
-        (isearch-repeat dt)
-        (when (eq dt 'backward)
-          (isearch-repeat dt))
-        (isearch-project-remove-advices))
-    (error "Cannot isearch project without project directory defined")))
+  (setq isearch-project-thing-at-point (thing-at-point 'symbol))
+  (if (char-or-string-p isearch-project-thing-at-point)
+      (isearch-project-forward)
+    (error "Isearch project : no symbol at point")))
 
 ;;;###autoload
 (defun isearch-project-forward ()
-  "Incremental search in the project."
+  "Incremental search forward in the project."
   (interactive)
   (if (isearch-project-prepare)
       (progn
@@ -228,6 +212,15 @@ CNT : search count."
 
       ;; Update current file index.
       (setq isearch-project-files-current-index next-file-index))))
+
+
+(defun isearch-project-isearch-mode-hook ()
+  "Paste the current symbol when `isearch' enabled."
+  (when (memq this-command '(isearch-project-forward-symbol-at-point))
+    (when (char-or-string-p isearch-project-thing-at-point)
+      (isearch-yank-string isearch-project-thing-at-point))))
+
+(add-hook 'isearch-mode-hook #'isearch-project-isearch-mode-hook)
 
 
 (provide 'isearch-project)
