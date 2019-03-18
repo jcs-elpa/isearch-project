@@ -5,7 +5,25 @@
 # isearch-project
 > Incremental search through the whole project.
 
+This is an alternative package replacing `ag` file searcher. The 
+logic behinds this package is similar to 
+[Visual Studio](https://visualstudio.microsoft.com/)
+`find and replace` functionalities, but using `isearch`. 
+It simply searches `regexp` in each file accordingly to the 
+project file tree.
 
+*P.S. Inspired by [Visual Studio](https://visualstudio.microsoft.com/) search preset behavior.*
+
+
+## Usage ##
+Call it from `minibuffer` directly, 
+```
+M-x isearch-project-forward
+```
+Or you can bind it globally to any key you want.
+```el
+(global-set-key (kbd "any-key") #'isearch-project-forward)
+```
 
 
 ## Contribution
