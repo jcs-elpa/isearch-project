@@ -43,6 +43,15 @@
   :link '(url-link :tag "Repository" "https://github.com/jcs090218/isearch-project"))
 
 
+(defcustom isearch-project-ignore-paths '(".bzr/"
+                                          ".cvs/"
+                                          ".git/"
+                                          ".hg/"
+                                          ".svn/")
+  "List of path you want to ignore by Incremental searching in the project."
+  :type 'list
+  :group 'isearch-project)
+
 (defvar isearch-project-search-path ""
   "Record the current search path, so when next time it searhs would not \
 need to research from the start.")
@@ -66,6 +75,38 @@ need to research from the start.")
   "Record down the symbol while executing `isearch-project-forward-symbol-at-point' command.")
 
 
+(defun isearch-project-is-contain-list-string (in-list in-str)
+  "Check if a string contain in any string in the string list.
+IN-LIST : list of string use to check if IN-STR in contain one of
+the string.
+IN-STR : string using to check if is contain one of the IN-LIST."
+  (cl-some #'(lambda (lb-sub-str) (string-match-p (regexp-quote lb-sub-str) in-str)) in-list))
+
+(defun isearch-project-remove-nth-element (n lst)
+  "Remove nth element from the list.
+N : nth element you want to remove from the list.
+LST : List you want to modified."
+  (if (zerop n)
+      (cdr lst)
+    (let ((last (nthcdr (1- n) lst)))
+      (setcdr last (cddr last))
+      lst)))
+
+(defun isearch-project-filter-directory-files-recursively (lst)
+  "Filter directory files.
+LST : Directory files."
+  (let ((index 0)
+        (path ""))
+    (while (< index (length lst))
+      (setq path (nth index lst))
+
+      ;; Filter it.
+      (if (isearch-project-is-contain-list-string isearch-project-ignore-paths path)
+          (setq lst (isearch-project-remove-nth-element index lst))
+        (setq index (+ index 1)))
+      ))
+  lst)
+
 (defun isearch-project-prepare ()
   "Incremental search preparation."
   (let ((prepare-success nil))
@@ -73,8 +114,9 @@ need to research from the start.")
     (when isearch-project-project-dir
       ;; Get the current buffer name.
       (setq isearch-project-search-path (buffer-file-name))
-      ;; Get all the file from the project.
+      ;; Get all the file from the project, and filter it.
       (setq isearch-project-files (directory-files-recursively isearch-project-project-dir ""))
+      (setq isearch-project-files (isearch-project-filter-directory-files-recursively isearch-project-files))
       ;; Reset to -1.
       (setq isearch-project-files-current-index -1)
 
