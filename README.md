@@ -16,9 +16,10 @@ logic behinds this package is similar to
 It simply searches `regexp` in each file accordingly to the 
 project file tree.
 
-`isearch` gives a better visuality than `ag` does. `ag` is great but 
-verbose for me to use because it gives you a whole list that matches even 
-the matching line are in the exact same line.
+`isearch` gives a better visuality than `ag` does. `ag` is 
+great but is verbose for me to use because it gives you a 
+whole list that matches even the matching line are in the 
+exact same line.
 
 *P.S. Inspired by [Visual Studio](https://visualstudio.microsoft.com/) `find and replace` preset behavior.*
 
