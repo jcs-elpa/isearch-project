@@ -6,7 +6,7 @@
 > Incremental search through the whole project.
 
 <p align="center">
-  <img src="./screenshot/isearch-project-demo.gif" width="450" height="513"/>
+  <img src="./screenshot/isearch-project-demo.gif" width="350" height="513"/>
 </p>
 
 This is an alternative package replacing `ag` searcher. The 
