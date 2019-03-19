@@ -20,7 +20,7 @@ project file tree.
 verbose for me to use because it gives you a whole list that matches even 
 the matching line are in the exact same line.
 
-*P.S. Inspired by [Visual Studio](https://visualstudio.microsoft.com/) search preset behavior.*
+*P.S. Inspired by [Visual Studio](https://visualstudio.microsoft.com/) `find and replace` preset behavior.*
 
 
 ## Usage ##
