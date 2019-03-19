@@ -5,12 +5,26 @@
 # isearch-project
 > Incremental search through the whole project.
 
-This is an alternative package replacing `ag` file searcher. The 
-logic behinds this package is similar to 
+<p align="center">
+  <img src="./screenshot/isearch-project-demo.gif" width="450" height="513"/>
+</p>
+
+This is an alternative package replacing 
+[ag](https://github.com/Wilfred/ag.el) 
+searcher. The logic behinds this package is similar to 
 [Visual Studio](https://visualstudio.microsoft.com/)
 `find and replace` functionalities, but using `isearch`. 
 It simply searches `regexp` in each file accordingly to the 
 project file tree.
+
+[isearch](https://www.emacswiki.org/emacs/IncrementalSearch) 
+gives a better visuality than 
+[ag](https://github.com/Wilfred/ag.el) 
+does. 
+[ag](https://github.com/Wilfred/ag.el) 
+is great but verbose for me to use because it gives you a 
+whole list that matches even the matching line are in the 
+exact same line.
 
 *P.S. Inspired by [Visual Studio](https://visualstudio.microsoft.com/) search preset behavior.*
 
