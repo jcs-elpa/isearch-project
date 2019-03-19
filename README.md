@@ -13,8 +13,9 @@ This is an alternative package replacing
 [ag](https://github.com/Wilfred/ag.el) 
 searcher. The logic behinds this package is similar to 
 [Visual Studio](https://visualstudio.microsoft.com/)
-`find and replace` functionalities, but using `isearch`. 
-It simply searches `regexp` in each file accordingly to the 
+`find and replace` functionalities, but using 
+[isearch](https://www.emacswiki.org/emacs/IncrementalSearch)
+. It simply searches `regexp` in each file accordingly to the 
 project file tree.
 
 [isearch](https://www.emacswiki.org/emacs/IncrementalSearch) 
