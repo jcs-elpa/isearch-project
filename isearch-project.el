@@ -162,22 +162,12 @@ CNT : search count."
               (cl-position isearch-project-search-path
                            isearch-project-files
                            :test 'string=))
-        (setq isearch-project-files-starting-index isearch-project-files-current-index)
         (setq next-file-index isearch-project-files-current-index))
 
-      ;; Cycle it.
-      (cond ((eq dt 'backward)
-             (when (< next-file-index 0)
-               (setq next-file-index (- (length isearch-project-files) 1))))
-            ((eq dt 'forward)
-             (when (>= next-file-index (length isearch-project-files))
-               (setq next-file-index 0))))
+      ;; Record down the starting file index.
+      (setq isearch-project-files-starting-index isearch-project-files-current-index)
 
-      ;; Target the next file.
-      (setq next-fn (nth next-file-index isearch-project-files))
-
-
-      (let ((buf-content (isearch-project-get-string-from-file next-fn))
+      (let ((buf-content "")
             (break-it nil)
             (search-cnt (if cnt cnt 1)))
         (while (not break-it)
@@ -198,14 +188,17 @@ CNT : search count."
           ;; Target the next file.
           (setq next-fn (nth next-file-index isearch-project-files))
 
-          ;; Found match.
-          (if (isearch-project-contain-string isearch-string buf-content)
-              (progn
-                (setq search-cnt (- search-cnt 1))
-                (if (<= search-cnt 0)
-                    (setq break-it t)))
-            ;; Update buffer content.
-            (setq buf-content (isearch-project-get-string-from-file next-fn)))))
+          ;; Update buffer content.
+          (setq buf-content (isearch-project-get-string-from-file next-fn))
+
+          (when (or
+                 ;; Found match.
+                 (isearch-project-contain-string isearch-string buf-content)
+                 ;; Is the same as the starting file, this prevents infinite loop.
+                 (= isearch-project-files-starting-index next-file-index))
+            (setq search-cnt (- search-cnt 1))
+            (when (<= search-cnt 0)
+              (setq break-it t)))))
 
       ;; Open the file.
       (isearch-project-find-file-search next-fn dt)
