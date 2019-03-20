@@ -256,6 +256,5 @@ CNT : search count."
 
 (add-hook 'isearch-mode-hook #'isearch-project-isearch-mode-hook)
 
-
 (provide 'isearch-project)
 ;;; isearch-project.el ends here
