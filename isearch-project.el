@@ -103,8 +103,7 @@ LST : Directory files."
       ;; Filter it.
       (if (isearch-project-is-contain-list-string isearch-project-ignore-paths path)
           (setq lst (isearch-project-remove-nth-element index lst))
-        (setq index (+ index 1)))
-      ))
+        (setq index (+ index 1)))))
   lst)
 
 (defun isearch-project-prepare ()
