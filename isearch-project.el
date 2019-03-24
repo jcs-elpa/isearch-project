@@ -33,6 +33,7 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'grep)
 (require 'isearch)
 
 
@@ -43,18 +44,8 @@
   :link '(url-link :tag "Repository" "https://github.com/jcs090218/isearch-project"))
 
 
-(defcustom isearch-project-ignore-paths '(".bzr/"
-                                          ".cvs/"
-                                          ".git/"
-                                          ".hg/"
-                                          ".svn/")
-  "List of path you want to ignore by Incremental searching in the project."
-  :type 'list
-  :group 'isearch-project)
-
 (defvar isearch-project-search-path ""
-  "Record the current search path, so when next time it searhs would not \
-need to research from the start.")
+  "Record the current search path, so when next time it searhs would not need to research from the start.")
 
 (defvar isearch-project-project-dir ""
   "Current isearch project directory.")
@@ -96,12 +87,23 @@ LST : List you want to modified."
   "Filter directory files.
 LST : Directory files."
   (let ((index 0)
-        (path ""))
+        (path "")
+        (ignored-paths '()))
+    (setq ignored-paths (mapcar #'copy-sequence grep-find-ignored-directories))
+    ;; Add / at the end of each path.
+    (while (< index (length ignored-paths))
+      (setq path (nth index ignored-paths))
+      (setq path (concat path "/"))
+      (setf (nth index ignored-paths) path)
+      (setq index (+ index 1)))
+
+    (setq index 0)
+
     (while (< index (length lst))
       (setq path (nth index lst))
 
       ;; Filter it.
-      (if (isearch-project-is-contain-list-string isearch-project-ignore-paths path)
+      (if (isearch-project-is-contain-list-string ignored-paths path)
           (setq lst (isearch-project-remove-nth-element index lst))
         (setq index (+ index 1)))))
   lst)
