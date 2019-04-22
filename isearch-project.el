@@ -130,9 +130,10 @@ LST : Directory files."
   "Incremental search forward at current point in the project."
   (interactive)
   (setq isearch-project-thing-at-point (thing-at-point 'symbol))
-  (if (char-or-string-p isearch-project-thing-at-point)
+  (if (or (use-region-p)
+          (char-or-string-p isearch-project-thing-at-point))
       (isearch-project-forward)
-    (error "Isearch project : no symbol at point")))
+    (error "Isearch project : no region or symbol at point")))
 
 ;;;###autoload
 (defun isearch-project-forward ()
@@ -250,11 +251,21 @@ CNT : search count."
       (setq isearch-project-files-current-index next-file-index))))
 
 
+(defun isearch-project-isearch-yank-string (search-str)
+  "Isearch project allow arrow because we need to search through next file.
+SEARCH-STR : Search string."
+  (ignore-errors
+    (isearch-yank-string search-str)))
+
 (defun isearch-project-isearch-mode-hook ()
   "Paste the current symbol when `isearch' enabled."
-  (when (memq this-command '(isearch-project-forward-symbol-at-point))
-    (when (char-or-string-p isearch-project-thing-at-point)
-      (isearch-yank-string isearch-project-thing-at-point))))
+  (cond ((use-region-p)
+         (let ((search-str (buffer-substring-no-properties (region-beginning) (region-end))))
+           (deactivate-mark)
+           (isearch-project-isearch-yank-string search-str)))
+        ((memq this-command '(isearch-project-forward-symbol-at-point))
+         (when (char-or-string-p isearch-project-thing-at-point)
+           (isearch-project-isearch-yank-string isearch-project-thing-at-point)))))
 
 (add-hook 'isearch-mode-hook #'isearch-project-isearch-mode-hook)
 
