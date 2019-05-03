@@ -269,12 +269,15 @@ SEARCH-STR : Search string."
 
 (defun isearch-project-isearch-mode-hook ()
   "Paste the current symbol when `isearch' enabled."
-  (cond ((use-region-p)
+  (cond ((and (use-region-p)
+              (memq this-command '(isearch-project-forward isearch-project-forward-symbol-at-point)))
          (let ((search-str (buffer-substring-no-properties (region-beginning) (region-end))))
            (deactivate-mark)
            (isearch-project-isearch-yank-string search-str)))
         ((memq this-command '(isearch-project-forward-symbol-at-point))
          (when (char-or-string-p isearch-project-thing-at-point)
+           (ignore-errors (forward-line -1))
+           (beginning-of-line)
            (isearch-project-isearch-yank-string isearch-project-thing-at-point)))))
 
 (add-hook 'isearch-mode-hook #'isearch-project-isearch-mode-hook)
