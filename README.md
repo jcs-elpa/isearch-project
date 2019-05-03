@@ -24,7 +24,7 @@ exact same line.
 *P.S. Inspired by [Visual Studio](https://visualstudio.microsoft.com/) `find and replace` preset behavior.*
 
 
-## Configuration
+## Customization
 Set the paths you usually want to ignore to search through.
 ```el
 (setq isearch-project-ignore-paths '(".vs/"
