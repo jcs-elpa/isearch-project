@@ -44,6 +44,14 @@
   :link '(url-link :tag "Repository" "https://github.com/jcs090218/isearch-project"))
 
 
+(defcustom isearch-project-ignore-paths '(".vs/"
+                                          ".vscode/"
+                                          "node_modules/")
+  "List of path you want to ignore by Incremental searching in the project."
+  :type 'list
+  :group 'isearch-project)
+
+
 (defvar isearch-project-search-path ""
   "Record the current search path, so when next time it searhs would not need to research from the start.")
 
@@ -96,6 +104,8 @@ LST : Directory files."
       (setq path (concat path "/"))
       (setf (nth index ignored-paths) path)
       (setq index (+ index 1)))
+
+    (setq ignored-paths (append ignored-paths isearch-project-ignore-paths))
 
     (setq index 0)
 
