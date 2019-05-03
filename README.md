@@ -24,7 +24,16 @@ exact same line.
 *P.S. Inspired by [Visual Studio](https://visualstudio.microsoft.com/) `find and replace` preset behavior.*
 
 
-## Usage ##
+## Configuration
+Set the paths you usually want to ignore.
+```el
+(setq isearch-project-ignore-paths '(".vs/"
+                                     ".vscode/"
+                                     "node_modules/"))
+```
+
+
+## Usage
 Call it from `minibuffer` directly, 
 ```
 M-x isearch-project-forward
