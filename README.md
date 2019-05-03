@@ -25,7 +25,7 @@ exact same line.
 
 
 ## Configuration
-Set the paths you usually want to ignore.
+Set the paths you usually want to ignore to search through.
 ```el
 (setq isearch-project-ignore-paths '(".vs/"
                                      ".vscode/"
