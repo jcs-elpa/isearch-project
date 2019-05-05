@@ -276,6 +276,7 @@ SEARCH-STR : Search string."
            (isearch-project-isearch-yank-string search-str)))
         ((memq this-command '(isearch-project-forward-symbol-at-point))
          (when (char-or-string-p isearch-project-thing-at-point)
+           (forward-char 1)
            (forward-symbol -1)
            (isearch-project-isearch-yank-string isearch-project-thing-at-point)))))
 
