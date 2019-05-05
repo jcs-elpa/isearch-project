@@ -6,7 +6,7 @@
 ;; Author: Shen, Jen-Chieh <jcs090218@gmail.com>
 ;; Description: Incremental search through the whole project.
 ;; Keyword: convenience, search
-;; Version: 0.0.6
+;; Version: 0.0.7
 ;; Package-Requires: ((emacs "25") (cl-lib "0.6"))
 ;; URL: https://github.com/jcs090218/isearch-project
 
