@@ -120,31 +120,6 @@ LST : List you want to modified."
       (push (f-files dir fn) files))
     (jcs-flatten-list (reverse files))))
 
-(defun isearch-project--filter-directory-files-recursively (lst)
-  "Filter directory files.
-LST : Directory files."
-  (let ((index 0) (path "") (ignored-paths '()))
-    (setq ignored-paths (mapcar #'copy-sequence grep-find-ignored-directories))
-    ;; Add / at the end of each path.
-    (while (< index (length ignored-paths))
-      (setq path (nth index ignored-paths))
-      (setq path (concat path "/"))
-      (setf (nth index ignored-paths) path)
-      (setq index (+ index 1)))
-
-    (setq ignored-paths (append ignored-paths isearch-project-ignore-paths))
-
-    (setq index 0)
-
-    (while (< index (length lst))
-      (setq path (nth index lst))
-
-      ;; Filter it.
-      (if (isearch-project--is-contain-list-string ignored-paths path)
-          (setq lst (isearch-project--remove-nth-element index lst))
-        (setq index (+ index 1)))))
-  lst)
-
 (defun isearch-project-prepare ()
   "Incremental search preparation."
   (let ((prepare-success nil))
