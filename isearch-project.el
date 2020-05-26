@@ -1,4 +1,4 @@
-;;; isearch-project.el --- Incremental search through the whole project.  -*- lexical-binding: t; -*-
+;;; isearch-project.el --- Incremental search through the whole project  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2019  Shen, Jen-Chieh
 ;; Created date 2019-03-18 15:16:04
@@ -7,7 +7,7 @@
 ;; Description: Incremental search through the whole project.
 ;; Keyword: convenience, search
 ;; Version: 0.0.7
-;; Package-Requires: ((emacs "25") (cl-lib "0.6"))
+;; Package-Requires: ((emacs "26.1") (cl-lib "0.6") (f "0.20.0"))
 ;; URL: https://github.com/jcs090218/isearch-project
 
 ;; This file is NOT part of GNU Emacs.
@@ -33,6 +33,7 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'f)
 (require 'grep)
 (require 'isearch)
 
@@ -52,36 +53,36 @@
   :group 'isearch-project)
 
 
-(defvar isearch-project-search-path ""
+(defvar isearch-project--search-path ""
   "Record the current search path, so when next time it searhs would not need to research from the start.")
 
-(defvar isearch-project-project-dir ""
+(defvar isearch-project--project-dir ""
   "Current isearch project directory.")
 
-(defvar isearch-project-files '()
+(defvar isearch-project--files '()
   "List of file path in the project.")
 
-(defvar isearch-project-files-starting-index -1
-  "Starting search path index, use with `isearch-project-files' list.")
+(defvar isearch-project--files-starting-index -1
+  "Starting search path index, use with `isearch-project--files' list.")
 
-(defvar isearch-project-files-current-index -1
-  "Current search path index, use with `isearch-project-files' list.")
+(defvar isearch-project--files-current-index -1
+  "Current search path index, use with `isearch-project--files' list.")
 
-(defvar isearch-project-run-advice t
+(defvar isearch-project--run-advice t
   "Flag to check if run advice.")
 
-(defvar isearch-project-thing-at-point ""
+(defvar isearch-project--thing-at-point ""
   "Record down the symbol while executing `isearch-project-forward-symbol-at-point' command.")
 
 
-(defun isearch-project-is-contain-list-string (in-list in-str)
+(defun isearch-project--is-contain-list-string (in-list in-str)
   "Check if a string contain in any string in the string list.
 IN-LIST : list of string use to check if IN-STR in contain one of
 the string.
 IN-STR : string using to check if is contain one of the IN-LIST."
   (cl-some #'(lambda (lb-sub-str) (string-match-p (regexp-quote lb-sub-str) in-str)) in-list))
 
-(defun isearch-project-remove-nth-element (n lst)
+(defun isearch-project--remove-nth-element (n lst)
   "Remove nth element from the list.
 N : nth element you want to remove from the list.
 LST : List you want to modified."
@@ -91,12 +92,38 @@ LST : List you want to modified."
       (setcdr last (cddr last))
       lst)))
 
-(defun isearch-project-filter-directory-files-recursively (lst)
+(defun isearch-project--f-directories-ignore-directories (path &optional rec)
+  "Find all directories in PATH by ignored common directories with FN and REC."
+  (let ((dirs (f-directories path))
+        (valid-dirs '())
+        (final-dirs '())
+        (ignore-lst (append grep-find-ignored-directories
+                            isearch-project-ignore-paths
+                            (if (boundp 'projectile-globally-ignored-directories)
+                                projectile-globally-ignored-directories
+                              '()))))
+    (dolist (dir dirs)
+      (unless (isearch-project--is-contain-list-string ignore-lst dir)
+        (push dir valid-dirs)))
+    (when rec
+      (dolist (dir valid-dirs)
+        (push (isearch-project--f-directories-ignore-directories dir rec) final-dirs)))
+    (setq valid-dirs (reverse valid-dirs))
+    (setq final-dirs (reverse final-dirs))
+    (jcs-flatten-list (append valid-dirs final-dirs))))
+
+(defun isearch-project--f-files-ignore-directories (path &optional fn rec)
+  "Find all files in PATH by ignored common directories with FN and REC."
+  (let ((dirs (append (list path) (isearch-project--f-directories-ignore-directories path rec)))
+        (files '()))
+    (dolist (dir dirs)
+      (push (f-files dir fn) files))
+    (jcs-flatten-list (reverse files))))
+
+(defun isearch-project--filter-directory-files-recursively (lst)
   "Filter directory files.
 LST : Directory files."
-  (let ((index 0)
-        (path "")
-        (ignored-paths '()))
+  (let ((index 0) (path "") (ignored-paths '()))
     (setq ignored-paths (mapcar #'copy-sequence grep-find-ignored-directories))
     ;; Add / at the end of each path.
     (while (< index (length ignored-paths))
@@ -113,24 +140,22 @@ LST : Directory files."
       (setq path (nth index lst))
 
       ;; Filter it.
-      (if (isearch-project-is-contain-list-string ignored-paths path)
-          (setq lst (isearch-project-remove-nth-element index lst))
+      (if (isearch-project--is-contain-list-string ignored-paths path)
+          (setq lst (isearch-project--remove-nth-element index lst))
         (setq index (+ index 1)))))
   lst)
 
 (defun isearch-project-prepare ()
   "Incremental search preparation."
   (let ((prepare-success nil))
-    (setq isearch-project-project-dir (cdr (project-current)))
-    (when isearch-project-project-dir
+    (setq isearch-project--project-dir (cdr (project-current)))
+    (when isearch-project--project-dir
       ;; Get the current buffer name.
-      (setq isearch-project-search-path (buffer-file-name))
-      ;; Get all the file from the project, and filter it.
-      (setq isearch-project-files (directory-files-recursively isearch-project-project-dir ""))
-      (setq isearch-project-files (isearch-project-filter-directory-files-recursively isearch-project-files))
+      (setq isearch-project--search-path (buffer-file-name))
+      ;; Get all the file from the project, and filter it with ignore path list.
+      (setq isearch-project--files (isearch-project--f-files-ignore-directories isearch-project--project-dir nil t))
       ;; Reset to -1.
-      (setq isearch-project-files-current-index -1)
-
+      (setq isearch-project--files-current-index -1)
       (setq prepare-success t))
     prepare-success))
 
@@ -139,9 +164,9 @@ LST : Directory files."
 (defun isearch-project-forward-symbol-at-point ()
   "Incremental search forward at current point in the project."
   (interactive)
-  (setq isearch-project-thing-at-point (thing-at-point 'symbol))
+  (setq isearch-project--thing-at-point (thing-at-point 'symbol))
   (if (or (use-region-p)
-          (char-or-string-p isearch-project-thing-at-point))
+          (char-or-string-p isearch-project--thing-at-point))
       (isearch-project-forward)
     (error "Isearch project : no region or symbol at point")))
 
@@ -187,18 +212,16 @@ If found, leave it.  If not found, try find the next file.
 FN : file to search.
 DT : search direction."
   (find-file fn)
-  (cond ((eq dt 'forward)
-         (goto-char (point-min)))
-        ((eq dt 'backward)
-         (goto-char (point-max))))
+  (cl-case dt
+    ('forward  (goto-char (point-min)))
+    ('backward (goto-char (point-max))))
 
   (isearch-search-string isearch-string nil t)
 
-  (let ((isearch-project-run-advice nil))
-    (cond ((eq dt 'forward)
-           (isearch-repeat-forward))
-          ((eq dt 'backward)
-           (isearch-repeat-backward)))))
+  (let ((isearch-project--run-advice nil))
+    (cl-case dt
+      ('forward (isearch-repeat-forward))
+      ('backward (isearch-repeat-backward)))))
 
 
 (defun isearch-project-advice-isearch-repeat-after (dt &optional cnt)
@@ -206,41 +229,37 @@ DT : search direction."
 command.
 DT : search direction.
 CNT : search count."
-  (when (and (not isearch-success)
-             isearch-project-run-advice)
-    (let ((next-file-index isearch-project-files-current-index)
-          (next-fn ""))
+  (when (and (not isearch-success) isearch-project--run-advice)
+    (let ((next-file-index isearch-project--files-current-index) (next-fn ""))
       ;; Get the next file index.
-      (when (= isearch-project-files-current-index -1)
-        (setq isearch-project-files-current-index
-              (cl-position isearch-project-search-path
-                           isearch-project-files
+      (when (= isearch-project--files-current-index -1)
+        (setq isearch-project--files-current-index
+              (cl-position isearch-project--search-path
+                           isearch-project--files
                            :test 'string=))
-        (setq next-file-index isearch-project-files-current-index))
+        (setq next-file-index isearch-project--files-current-index))
 
       ;; Record down the starting file index.
-      (setq isearch-project-files-starting-index isearch-project-files-current-index)
+      (setq isearch-project--files-starting-index isearch-project--files-current-index)
 
-      (let ((buf-content "")
-            (break-it nil)
-            (search-cnt (if cnt cnt 1)))
+      (let ((buf-content "") (break-it nil) (search-cnt (if cnt cnt 1)))
         (while (not break-it)
           ;; Get the next file index.
-          (cond ((eq dt 'backward)
-                 (setq next-file-index (- next-file-index 1)))
-                ((eq dt 'forward)
-                 (setq next-file-index (+ next-file-index 1))))
+          (cl-case dt
+            ('backward (setq next-file-index (- next-file-index 1)))
+            ('forward (setq next-file-index (+ next-file-index 1))))
 
           ;; Cycle it.
-          (cond ((eq dt 'backward)
-                 (when (< next-file-index 0)
-                   (setq next-file-index (- (length isearch-project-files) 1))))
-                ((eq dt 'forward)
-                 (when (>= next-file-index (length isearch-project-files))
-                   (setq next-file-index 0))))
+          (cl-case dt
+            ('backward
+             (when (< next-file-index 0)
+               (setq next-file-index (- (length isearch-project--files) 1))))
+            ('forward
+             (when (>= next-file-index (length isearch-project--files))
+               (setq next-file-index 0))))
 
           ;; Target the next file.
-          (setq next-fn (nth next-file-index isearch-project-files))
+          (setq next-fn (nth next-file-index isearch-project--files))
 
           ;; Update buffer content.
           (setq buf-content (isearch-project-get-string-from-file next-fn))
@@ -249,23 +268,21 @@ CNT : search count."
                  ;; Found match.
                  (isearch-project-contain-string isearch-string buf-content)
                  ;; Is the same as the starting file, this prevents infinite loop.
-                 (= isearch-project-files-starting-index next-file-index))
+                 (= isearch-project--files-starting-index next-file-index))
             (setq search-cnt (- search-cnt 1))
-            (when (<= search-cnt 0)
-              (setq break-it t)))))
+            (when (<= search-cnt 0) (setq break-it t)))))
 
       ;; Open the file.
       (isearch-project-find-file-search next-fn dt)
 
       ;; Update current file index.
-      (setq isearch-project-files-current-index next-file-index))))
+      (setq isearch-project--files-current-index next-file-index))))
 
 
-(defun isearch-project-isearch-yank-string (search-str)
-  "Isearch project allow arrow because we need to search through next file.
+(defun isearch-project--isearch-yank-string (search-str)
+  "Isearch project allow error because we need to search through next file.
 SEARCH-STR : Search string."
-  (ignore-errors
-    (isearch-yank-string search-str)))
+  (ignore-errors (isearch-yank-string search-str)))
 
 (defun isearch-project-isearch-mode-hook ()
   "Paste the current symbol when `isearch' enabled."
@@ -273,13 +290,13 @@ SEARCH-STR : Search string."
               (memq this-command '(isearch-project-forward isearch-project-forward-symbol-at-point)))
          (let ((search-str (buffer-substring-no-properties (region-beginning) (region-end))))
            (deactivate-mark)
-           (isearch-project-isearch-yank-string search-str)))
+           (isearch-project--isearch-yank-string search-str)))
         ((memq this-command '(isearch-project-forward-symbol-at-point))
-         (when (char-or-string-p isearch-project-thing-at-point)
+         (when (char-or-string-p isearch-project--thing-at-point)
            (unless (= (point) (point-max))
              (forward-char 1))
            (forward-symbol -1)
-           (isearch-project-isearch-yank-string isearch-project-thing-at-point)))))
+           (isearch-project--isearch-yank-string isearch-project--thing-at-point)))))
 
 (add-hook 'isearch-mode-hook #'isearch-project-isearch-mode-hook)
 
