@@ -37,13 +37,11 @@
 (require 'grep)
 (require 'isearch)
 
-
 (defgroup isearch-project nil
   "Incremental search through the whole project."
   :prefix "isearch-project-"
   :group 'isearch
   :link '(url-link :tag "Repository" "https://github.com/jcs090218/isearch-project"))
-
 
 (defcustom isearch-project-ignore-paths '(".vs/"
                                           ".vscode/"
@@ -51,7 +49,6 @@
   "List of path you want to ignore by Incremental searching in the project."
   :type 'list
   :group 'isearch-project)
-
 
 (defvar isearch-project--search-path ""
   "Record the current search path, so when next time it searhs would not need to research from the start.")
@@ -91,6 +88,20 @@ LST : List you want to modified."
     (let ((last (nthcdr (1- n) lst)))
       (setcdr last (cddr last))
       lst)))
+
+(defun isearch-project--contain-string (in-sub-str in-str)
+  "Check if a string is a substring of another string.
+Return true if contain, else return false.
+IN-SUB-STR : substring to see if contain in the IN-STR.
+IN-STR : string to check by the IN-SUB-STR."
+  (string-match-p in-sub-str in-str))
+
+(defun isearch-project--get-string-from-file (filePath)
+  "Return filePath's file content.
+FILEPATH : file path."
+  (with-temp-buffer
+    (insert-file-contents filePath)
+    (buffer-string)))
 
 (defun isearch-project--f-directories-ignore-directories (path &optional rec)
   "Find all directories in PATH by ignored common directories with FN and REC."
@@ -134,7 +145,6 @@ LST : List you want to modified."
       (setq prepare-success t))
     prepare-success))
 
-
 ;;;###autoload
 (defun isearch-project-forward-symbol-at-point ()
   "Incremental search forward at current point in the project."
@@ -151,35 +161,18 @@ LST : List you want to modified."
   (interactive)
   (if (isearch-project-prepare)
       (progn
-        (isearch-project-add-advices)
+        (isearch-project--add-advices)
         (isearch-forward)
-        (isearch-project-remove-advices))
+        (isearch-project--remove-advices))
     (error "Cannot isearch project without project directory defined")))
 
-
-(defun isearch-project-add-advices ()
+(defun isearch-project--add-advices ()
   "Add all needed advices."
   (advice-add 'isearch-repeat :after #'isearch-project-advice-isearch-repeat-after))
 
-(defun isearch-project-remove-advices ()
+(defun isearch-project--remove-advices ()
   "Remove all needed advices."
   (advice-remove 'isearch-repeat #'isearch-project-advice-isearch-repeat-after))
-
-
-(defun isearch-project-contain-string (in-sub-str in-str)
-  "Check if a string is a substring of another string.
-Return true if contain, else return false.
-IN-SUB-STR : substring to see if contain in the IN-STR.
-IN-STR : string to check by the IN-SUB-STR."
-  (string-match-p in-sub-str in-str))
-
-(defun isearch-project-get-string-from-file (filePath)
-  "Return filePath's file content.
-FILEPATH : file path."
-  (with-temp-buffer
-    (insert-file-contents filePath)
-    (buffer-string)))
-
 
 (defun isearch-project-find-file-search (fn dt)
   "Open a file and isearch.
@@ -190,9 +183,7 @@ DT : search direction."
   (cl-case dt
     ('forward  (goto-char (point-min)))
     ('backward (goto-char (point-max))))
-
   (isearch-search-string isearch-string nil t)
-
   (let ((isearch-project--run-advice nil))
     (cl-case dt
       ('forward (isearch-repeat-forward))
@@ -200,8 +191,7 @@ DT : search direction."
 
 
 (defun isearch-project-advice-isearch-repeat-after (dt &optional cnt)
-  "Advice when do either `isearch-repeat-backward' or `isearch-repeat-forward' \
-command.
+  "Advice for `isearch-repeat-backward' and `isearch-repeat-forward' command.
 DT : search direction.
 CNT : search count."
   (when (and (not isearch-success) isearch-project--run-advice)
@@ -237,11 +227,11 @@ CNT : search count."
           (setq next-fn (nth next-file-index isearch-project--files))
 
           ;; Update buffer content.
-          (setq buf-content (isearch-project-get-string-from-file next-fn))
+          (setq buf-content (isearch-project--get-string-from-file next-fn))
 
           (when (or
                  ;; Found match.
-                 (isearch-project-contain-string isearch-string buf-content)
+                 (isearch-project--contain-string isearch-string buf-content)
                  ;; Is the same as the starting file, this prevents infinite loop.
                  (= isearch-project--files-starting-index next-file-index))
             (setq search-cnt (- search-cnt 1))
@@ -253,13 +243,12 @@ CNT : search count."
       ;; Update current file index.
       (setq isearch-project--files-current-index next-file-index))))
 
-
 (defun isearch-project--isearch-yank-string (search-str)
   "Isearch project allow error because we need to search through next file.
 SEARCH-STR : Search string."
   (ignore-errors (isearch-yank-string search-str)))
 
-(defun isearch-project-isearch-mode-hook ()
+(defun isearch-project--isearch-mode-hook ()
   "Paste the current symbol when `isearch' enabled."
   (cond ((and (use-region-p)
               (memq this-command '(isearch-project-forward isearch-project-forward-symbol-at-point)))
@@ -272,9 +261,7 @@ SEARCH-STR : Search string."
              (forward-char 1))
            (forward-symbol -1)
            (isearch-project--isearch-yank-string isearch-project--thing-at-point)))))
-
-(add-hook 'isearch-mode-hook #'isearch-project-isearch-mode-hook)
-
+(add-hook 'isearch-mode-hook #'isearch-project--isearch-mode-hook)
 
 (provide 'isearch-project)
 ;;; isearch-project.el ends here
