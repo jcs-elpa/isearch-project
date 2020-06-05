@@ -72,6 +72,14 @@
   "Record down the symbol while executing `isearch-project-forward-symbol-at-point' command.")
 
 
+(defun isearch-project--flatten-list (l)
+  "Flatten the multiple dimensional array, L to one dimensonal array.
+For instance,
+  '(1 2 3 4 (5 6 7 8)) => '(1 2 3 4 5 6 7 8)."
+  (cond ((null l) nil)
+        ((atom l) (list l))
+        (t (loop for a in l appending (isearch-project--flatten-list a)))))
+
 (defun isearch-project--is-contain-list-string (in-list in-str)
   "Check if a string contain in any string in the string list.
 IN-LIST : list of string use to check if IN-STR in contain one of
@@ -121,7 +129,7 @@ FILEPATH : file path."
         (push (isearch-project--f-directories-ignore-directories dir rec) final-dirs)))
     (setq valid-dirs (reverse valid-dirs))
     (setq final-dirs (reverse final-dirs))
-    (jcs-flatten-list (append valid-dirs final-dirs))))
+    (isearch-project--flatten-list (append valid-dirs final-dirs))))
 
 (defun isearch-project--f-files-ignore-directories (path &optional fn rec)
   "Find all files in PATH by ignored common directories with FN and REC."
@@ -129,7 +137,7 @@ FILEPATH : file path."
         (files '()))
     (dolist (dir dirs)
       (push (f-files dir fn) files))
-    (jcs-flatten-list (reverse files))))
+    (isearch-project--flatten-list (reverse files))))
 
 (defun isearch-project-prepare ()
   "Incremental search preparation."
