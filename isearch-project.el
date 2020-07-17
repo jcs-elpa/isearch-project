@@ -8,7 +8,7 @@
 ;; Keyword: convenience, search
 ;; Version: 0.2.3
 ;; Package-Requires: ((emacs "26.1") (f "0.20.0"))
-;; URL: https://github.com/jcs090218/isearch-project
+;; URL: https://github.com/jcs-elpa/isearch-project
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -41,7 +41,7 @@
   "Incremental search through the whole project."
   :prefix "isearch-project-"
   :group 'isearch
-  :link '(url-link :tag "Repository" "https://github.com/jcs090218/isearch-project"))
+  :link '(url-link :tag "Repository" "https://github.com/jcs-elpa/isearch-project"))
 
 (defcustom isearch-project-ignore-paths '(".vs/"
                                           ".vscode/"
