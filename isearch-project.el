@@ -7,7 +7,7 @@
 ;; Description: Incremental search through the whole project.
 ;; Keyword: convenience, search
 ;; Version: 0.2.3
-;; Package-Requires: ((emacs "26.1") (cl-lib "0.6") (f "0.20.0"))
+;; Package-Requires: ((emacs "26.1") (f "0.20.0"))
 ;; URL: https://github.com/jcs090218/isearch-project
 
 ;; This file is NOT part of GNU Emacs.
@@ -71,6 +71,7 @@
 (defvar isearch-project--thing-at-point ""
   "Record down the symbol while executing `isearch-project-forward-symbol-at-point' command.")
 
+;;; Util
 
 (defun isearch-project--flatten-list (l)
   "Flatten the multiple dimensional array, L to one dimensonal array.
@@ -81,35 +82,28 @@ For instance,
         (t (loop for a in l appending (isearch-project--flatten-list a)))))
 
 (defun isearch-project--is-contain-list-string (in-list in-str)
-  "Check if a string contain in any string in the string list.
-IN-LIST : list of string use to check if IN-STR in contain one of
-the string.
-IN-STR : string using to check if is contain one of the IN-LIST."
+  "Check if IN-STR contain in any string in the IN-LIST."
   (cl-some #'(lambda (lb-sub-str) (string-match-p (regexp-quote lb-sub-str) in-str)) in-list))
 
-(defun isearch-project--remove-nth-element (n lst)
-  "Remove nth element from the list.
-N : nth element you want to remove from the list.
-LST : List you want to modified."
-  (if (zerop n)
+(defun isearch-project--remove-nth-element (nth lst)
+  "Remove NTH element from the LST and return the list."
+  (if (zerop nth)
       (cdr lst)
-    (let ((last (nthcdr (1- n) lst)))
+    (let ((last (nthcdr (1- nth) lst)))
       (setcdr last (cddr last))
       lst)))
 
 (defun isearch-project--contain-string (in-sub-str in-str)
-  "Check if a string is a substring of another string.
-Return true if contain, else return false.
-IN-SUB-STR : substring to see if contain in the IN-STR.
-IN-STR : string to check by the IN-SUB-STR."
+  "Check if the IN-SUB-STR is a string in IN-STR."
   (string-match-p in-sub-str in-str))
 
-(defun isearch-project--get-string-from-file (filePath)
-  "Return filePath's file content.
-FILEPATH : file path."
+(defun isearch-project--get-string-from-file (path)
+  "Return PATH file content."
   (with-temp-buffer
-    (insert-file-contents filePath)
+    (insert-file-contents path)
     (buffer-string)))
+
+;;; Core
 
 (defun isearch-project--f-directories-ignore-directories (path &optional rec)
   "Find all directories in PATH by ignored common directories with FN and REC."
@@ -139,7 +133,7 @@ FILEPATH : file path."
       (push (f-files dir fn) files))
     (isearch-project--flatten-list (reverse files))))
 
-(defun isearch-project-prepare ()
+(defun isearch-project--prepare ()
   "Incremental search preparation."
   (let ((prepare-success nil))
     (setq isearch-project--project-dir (cdr (project-current)))
@@ -167,7 +161,7 @@ FILEPATH : file path."
 (defun isearch-project-forward ()
   "Incremental search forward in the project."
   (interactive)
-  (if (isearch-project-prepare)
+  (if (isearch-project--prepare)
       (progn
         (isearch-project--add-advices)
         (isearch-forward)
@@ -176,13 +170,13 @@ FILEPATH : file path."
 
 (defun isearch-project--add-advices ()
   "Add all needed advices."
-  (advice-add 'isearch-repeat :after #'isearch-project-advice-isearch-repeat-after))
+  (advice-add 'isearch-repeat :after #'isearch-project--advice-isearch-repeat-after))
 
 (defun isearch-project--remove-advices ()
   "Remove all needed advices."
-  (advice-remove 'isearch-repeat #'isearch-project-advice-isearch-repeat-after))
+  (advice-remove 'isearch-repeat #'isearch-project--advice-isearch-repeat-after))
 
-(defun isearch-project-find-file-search (fn dt)
+(defun isearch-project--find-file-search (fn dt)
   "Open a file and isearch.
 If found, leave it.  If not found, try find the next file.
 FN : file to search.
@@ -197,8 +191,7 @@ DT : search direction."
       ('forward (isearch-repeat-forward))
       ('backward (isearch-repeat-backward)))))
 
-
-(defun isearch-project-advice-isearch-repeat-after (dt &optional cnt)
+(defun isearch-project--advice-isearch-repeat-after (dt &optional cnt)
   "Advice for `isearch-repeat-backward' and `isearch-repeat-forward' command.
 DT : search direction.
 CNT : search count."
@@ -246,7 +239,7 @@ CNT : search count."
             (when (<= search-cnt 0) (setq break-it t)))))
 
       ;; Open the file.
-      (isearch-project-find-file-search next-fn dt)
+      (isearch-project--find-file-search next-fn dt)
 
       ;; Update current file index.
       (setq isearch-project--files-current-index next-file-index))))
@@ -269,6 +262,7 @@ SEARCH-STR : Search string."
              (forward-char 1))
            (forward-symbol -1)
            (isearch-project--isearch-yank-string isearch-project--thing-at-point)))))
+
 (add-hook 'isearch-mode-hook #'isearch-project--isearch-mode-hook)
 
 (provide 'isearch-project)
