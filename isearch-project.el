@@ -116,7 +116,7 @@ For instance,
                                 projectile-globally-ignored-directories
                               '()))))
     (dolist (dir dirs)
-      (unless (isearch-project--is-contain-list-string ignore-lst dir)
+      (unless (isearch-project--is-contain-list-string ignore-lst (f-slash dir))
         (push dir valid-dirs)))
     (when rec
       (dolist (dir valid-dirs)
