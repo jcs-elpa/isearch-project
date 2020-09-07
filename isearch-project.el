@@ -73,13 +73,13 @@
 
 ;;; Util
 
-(defun isearch-project--flatten-list (l)
-  "Flatten the multiple dimensional array, L to one dimensonal array.
-For instance,
-  '(1 2 3 4 (5 6 7 8)) => '(1 2 3 4 5 6 7 8)."
-  (cond ((null l) nil)
-        ((atom l) (list l))
-        (t (loop for a in l appending (isearch-project--flatten-list a)))))
+(defun isearch-project--flatten-list (lst)
+  "Flatten the multiple dimensional array, LST to one dimensonal array.
+For instance, '(1 2 3 4 (5 6 7 8)) => '(1 2 3 4 5 6 7 8)."
+  (cond
+   ((null lst) nil)
+   ((atom lst) (list lst))
+   (t (append (isearch-project--flatten-list (car lst)) (isearch-project--flatten-list (cdr lst))))))
 
 (defun isearch-project--is-contain-list-string (in-list in-str)
   "Check if IN-STR contain in any string in the IN-LIST."
