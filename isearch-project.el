@@ -70,7 +70,8 @@ to research from the start.")
   "Flag to check if run advice.")
 
 (defvar isearch-project--thing-at-point ""
-  "Record down the symbol while executing `isearch-project-forward-symbol-at-point' command.")
+  "Record down the symbol while executing
+`isearch-project-forward-symbol-at-point' command.")
 
 ;;; Util
 
