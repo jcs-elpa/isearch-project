@@ -51,7 +51,8 @@
   :group 'isearch-project)
 
 (defvar isearch-project--search-path ""
-  "Record the current search path, so when next time it searhs would not need to research from the start.")
+  "Record the current search path, so when next time it searhs would not need
+to research from the start.")
 
 (defvar isearch-project--project-dir ""
   "Current isearch project directory.")
