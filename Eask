@@ -2,6 +2,9 @@
          "0.2.6"
          "Incremental search through the whole project")
 
+(website-url "https://github.com/jcs-elpa/isearch-project")
+(keywords "convenience" "search")
+
 (package-file "isearch-project.el")
 
 (source "melpa")

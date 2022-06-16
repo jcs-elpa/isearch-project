@@ -4,11 +4,10 @@
 ;; Created date 2019-03-18 15:16:04
 
 ;; Author: Shen, Jen-Chieh <jcs090218@gmail.com>
-;; Description: Incremental search through the whole project.
-;; Keyword: convenience, search
+;; URL: https://github.com/jcs-elpa/isearch-project
 ;; Version: 0.2.6
 ;; Package-Requires: ((emacs "26.1") (f "0.20.0"))
-;; URL: https://github.com/jcs-elpa/isearch-project
+;; Keywords: convenience, search
 
 ;; This file is NOT part of GNU Emacs.
 
