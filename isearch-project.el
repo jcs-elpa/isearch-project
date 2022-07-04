@@ -7,7 +7,7 @@
 ;; URL: https://github.com/jcs-elpa/isearch-project
 ;; Version: 0.2.6
 ;; Package-Requires: ((emacs "26.1") (f "0.20.0"))
-;; Keywords: convenience, search
+;; Keywords: convenience search
 
 ;; This file is NOT part of GNU Emacs.
 
