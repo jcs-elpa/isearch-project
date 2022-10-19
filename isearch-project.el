@@ -32,9 +32,11 @@
 ;;; Code:
 
 (require 'cl-lib)
-(require 'f)
 (require 'grep)
 (require 'isearch)
+(require 'project)
+
+(require 'f)
 
 (defgroup isearch-project nil
   "Incremental search through the whole project."
@@ -109,13 +111,13 @@ For instance, '(1 2 3 4 (5 6 7 8)) => '(1 2 3 4 5 6 7 8)."
 (defun isearch-project--f-directories-ignore-directories (path &optional rec)
   "Find all directories in PATH by ignored common directories with FN and REC."
   (let ((dirs (f-directories path))
-        (valid-dirs '())
-        (final-dirs '())
+        (valid-dirs)
+        (final-dirs)
         (ignore-lst (append grep-find-ignored-directories
                             isearch-project-ignore-paths
-                            (if (boundp 'projectile-globally-ignored-directories)
-                                projectile-globally-ignored-directories
-                              '()))))
+                            project-vc-ignores
+                            (when (boundp 'projectile-globally-ignored-directories)
+                              projectile-globally-ignored-directories))))
     (dolist (dir dirs)
       (unless (isearch-project--is-contain-list-string ignore-lst (f-slash dir))
         (push dir valid-dirs)))
@@ -129,14 +131,14 @@ For instance, '(1 2 3 4 (5 6 7 8)) => '(1 2 3 4 5 6 7 8)."
 (defun isearch-project--f-files-ignore-directories (path &optional fn rec)
   "Find all files in PATH by ignored common directories with FN and REC."
   (let ((dirs (append (list path) (isearch-project--f-directories-ignore-directories path rec)))
-        (files '()))
+        (files))
     (dolist (dir dirs)
       (push (f-files dir fn) files))
     (isearch-project--flatten-list (reverse files))))
 
 (defun isearch-project--prepare ()
   "Incremental search preparation."
-  (let ((prepare-success nil))
+  (let (prepare-success)
     (setq isearch-project--project-dir (cdr (project-current)))
     (when isearch-project--project-dir
       ;; Get the current buffer name.
