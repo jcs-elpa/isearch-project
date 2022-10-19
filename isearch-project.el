@@ -6,7 +6,7 @@
 ;; Author: Shen, Jen-Chieh <jcs090218@gmail.com>
 ;; URL: https://github.com/jcs-elpa/isearch-project
 ;; Version: 0.2.6
-;; Package-Requires: ((emacs "26.1") (f "0.20.0"))
+;; Package-Requires: ((emacs "27.1") (f "0.20.0"))
 ;; Keywords: convenience search
 
 ;; This file is NOT part of GNU Emacs.
@@ -76,14 +76,6 @@ to research from the start.")
 
 ;;; Util
 
-(defun isearch-project--flatten-list (lst)
-  "Flatten the multiple dimensional array, LST to one dimensonal array.
-For instance, '(1 2 3 4 (5 6 7 8)) => '(1 2 3 4 5 6 7 8)."
-  (cond
-   ((null lst) nil)
-   ((atom lst) (list lst))
-   (t (append (isearch-project--flatten-list (car lst)) (isearch-project--flatten-list (cdr lst))))))
-
 (defun isearch-project--is-contain-list-string (in-list in-str)
   "Check if IN-STR contain in any string in the IN-LIST."
   (cl-some #'(lambda (lb-sub-str) (string-match-p (regexp-quote lb-sub-str) in-str)) in-list))
@@ -123,7 +115,7 @@ For instance, '(1 2 3 4 (5 6 7 8)) => '(1 2 3 4 5 6 7 8)."
         (push (isearch-project--f-directories-ignore-directories dir rec) final-dirs)))
     (setq valid-dirs (reverse valid-dirs))
     (setq final-dirs (reverse final-dirs))
-    (isearch-project--flatten-list (append valid-dirs final-dirs))))
+    (flatten-list (append valid-dirs final-dirs))))
 
 (defun isearch-project--f-files-ignore-directories (path &optional fn rec)
   "Find all files in PATH by ignored common directories with FN and REC."
@@ -131,7 +123,7 @@ For instance, '(1 2 3 4 (5 6 7 8)) => '(1 2 3 4 5 6 7 8)."
         (files))
     (dolist (dir dirs)
       (push (f-files dir fn) files))
-    (isearch-project--flatten-list (reverse files))))
+    (flatten-list (reverse files))))
 
 (defun isearch-project--prepare ()
   "Incremental search preparation."
