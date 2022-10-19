@@ -90,8 +90,7 @@ For instance, '(1 2 3 4 (5 6 7 8)) => '(1 2 3 4 5 6 7 8)."
 
 (defun isearch-project--remove-nth-element (nth lst)
   "Remove NTH element from the LST and return the list."
-  (if (zerop nth)
-      (cdr lst)
+  (if (zerop nth) (cdr lst)
     (let ((last (nthcdr (1- nth) lst)))
       (setcdr last (cddr last))
       lst)))
@@ -100,11 +99,9 @@ For instance, '(1 2 3 4 (5 6 7 8)) => '(1 2 3 4 5 6 7 8)."
   "Check if the IN-SUB-STR is a string in IN-STR."
   (string-match-p in-sub-str in-str))
 
-(defun isearch-project--get-string-from-file (path)
+(defun isearch-project--string-from-file (path)
   "Return PATH file content."
-  (with-temp-buffer
-    (insert-file-contents path)
-    (buffer-string)))
+  (with-temp-buffer (insert-file-contents path) (buffer-string)))
 
 ;;; Core
 
@@ -231,7 +228,7 @@ CNT : search count."
           (setq next-fn (nth next-file-index isearch-project--files))
 
           ;; Update buffer content.
-          (setq buf-content (isearch-project--get-string-from-file next-fn))
+          (setq buf-content (isearch-project--string-from-file next-fn))
 
           (when (or
                  ;; Found match.
