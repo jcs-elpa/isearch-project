@@ -128,7 +128,8 @@ to research from the start.")
 (defun isearch-project--prepare ()
   "Incremental search preparation."
   (let (prepare-success)
-    (setq isearch-project--project-dir (cdr (project-current)))
+    (setq isearch-project--project-dir (car (cl-remove-if-not #'stringp
+                                                              (project-current))))
     (when isearch-project--project-dir
       ;; Get the current buffer name.
       (setq isearch-project--search-path (buffer-file-name))
