@@ -1,4 +1,5 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![JCS-ELPA](https://raw.githubusercontent.com/jcs-emacs/badges/master/elpa/v/isearch-project.svg)](https://jcs-emacs.github.io/jcs-elpa/#/isearch-project)
 [![MELPA](https://melpa.org/packages/isearch-project-badge.svg)](https://melpa.org/#/isearch-project)
 [![MELPA Stable](https://stable.melpa.org/packages/isearch-project-badge.svg)](https://stable.melpa.org/#/isearch-project)
 
