@@ -70,7 +70,7 @@ to research from the start.")
 (defvar isearch-project--run-advice t
   "Flag to check if run advice.")
 
-(defvar isearch-project--thing-at-point ""
+(defvar isearch-project--thing ""
   "Record down the symbol while executing
 `isearch-project-forward-symbol-at-point' command.")
 
@@ -86,10 +86,6 @@ to research from the start.")
     (let ((last (nthcdr (1- nth) lst)))
       (setcdr last (cddr last))
       lst)))
-
-(defun isearch-project--contain-string (in-sub-str in-str)
-  "Check if the IN-SUB-STR is a string in IN-STR."
-  (string-match-p in-sub-str in-str))
 
 (defun isearch-project--string-from-file (path)
   "Return PATH file content."
@@ -113,8 +109,8 @@ to research from the start.")
     (when rec
       (dolist (dir valid-dirs)
         (push (isearch-project--f-directories-ignore-directories dir rec) final-dirs)))
-    (setq valid-dirs (reverse valid-dirs))
-    (setq final-dirs (reverse final-dirs))
+    (setq valid-dirs (reverse valid-dirs)
+          final-dirs (reverse final-dirs))
     (flatten-list (append valid-dirs final-dirs))))
 
 (defun isearch-project--f-files-ignore-directories (path &optional fn rec)
@@ -128,27 +124,40 @@ to research from the start.")
 (defun isearch-project--prepare ()
   "Incremental search preparation."
   (let (prepare-success)
-    (setq isearch-project--project-dir (car (cl-remove-if-not #'stringp
-                                                              (project-current))))
+    (setq isearch-project--project-dir
+          (car (cl-remove-if-not #'stringp (project-current))))
     (when isearch-project--project-dir
       ;; Get the current buffer name.
       (setq isearch-project--search-path (buffer-file-name))
       ;; Get all the file from the project, and filter it with ignore path list.
       (setq isearch-project--files (isearch-project--f-files-ignore-directories isearch-project--project-dir nil t))
       ;; Reset to -1.
-      (setq isearch-project--files-current-index -1)
-      (setq prepare-success t))
+      (setq isearch-project--files-current-index -1
+            prepare-success t))
     prepare-success))
 
 ;;;###autoload
 (defun isearch-project-forward-symbol-at-point ()
-  "Incremental search forward at current point in the project."
+  "Incremental search symbol forward at current point in the project."
   (interactive)
-  (setq isearch-project--thing-at-point (thing-at-point 'symbol))
+  (setq isearch-project--thing (thing-at-point 'symbol))
   (if (or (use-region-p)
-          (char-or-string-p isearch-project--thing-at-point))
+          (char-or-string-p isearch-project--thing))
       (isearch-project-forward)
-    (error "Isearch project : no region or symbol at point")))
+    (error "[isearch-project]: no region or symbol at point")))
+
+;;;###autoload
+(defun isearch-project-forward-thing-at-point ()
+  "Incremental search thing forward at current point in the project."
+  (interactive)
+  (let ((bounds (seq-some (lambda (thing)
+                            (bounds-of-thing-at-point thing))
+                          isearch-forward-thing-at-point)))
+    (setq isearch-project--thing (buffer-substring-no-properties (car bounds) (cdr bounds))))
+  (if (or (use-region-p)
+          (char-or-string-p isearch-project--thing))
+      (isearch-project-forward)
+    (error "[isearch-project]: no region or symbol at point")))
 
 ;;;###autoload
 (defun isearch-project-forward ()
@@ -176,13 +185,13 @@ FN : file to search.
 DT : search direction."
   (find-file fn)
   (cl-case dt
-    ('forward  (goto-char (point-min)))
-    ('backward (goto-char (point-max))))
+    (`forward  (goto-char (point-min)))
+    (`backward (goto-char (point-max))))
   (isearch-search-string isearch-string nil t)
-  (let ((isearch-project--run-advice nil))
+  (let (isearch-project--run-advice)
     (cl-case dt
-      ('forward (isearch-repeat-forward))
-      ('backward (isearch-repeat-backward)))))
+      (`forward (isearch-repeat-forward))
+      (`backward (isearch-repeat-backward)))))
 
 (defun isearch-project--advice-isearch-repeat-after (dt &optional cnt)
   "Advice for `isearch-repeat-backward' and `isearch-repeat-forward' command.
@@ -201,19 +210,21 @@ CNT : search count."
       ;; Record down the starting file index.
       (setq isearch-project--files-starting-index isearch-project--files-current-index)
 
-      (let ((buf-content "") (break-it nil) (search-cnt (if cnt cnt 1)))
+      (let ((buf-content "")
+            (break-it)
+            (search-cnt (if cnt cnt 1)))
         (while (not break-it)
           ;; Get the next file index.
           (cl-case dt
-            ('backward (setq next-file-index (- next-file-index 1)))
-            ('forward (setq next-file-index (+ next-file-index 1))))
+            (`backward (cl-decf next-file-index))
+            (`forward (cl-incf next-file-index)))
 
           ;; Cycle it.
           (cl-case dt
-            ('backward
+            (`backward
              (when (< next-file-index 0)
                (setq next-file-index (- (length isearch-project--files) 1))))
-            ('forward
+            (`forward
              (when (>= next-file-index (length isearch-project--files))
                (setq next-file-index 0))))
 
@@ -225,10 +236,10 @@ CNT : search count."
 
           (when (or
                  ;; Found match.
-                 (isearch-project--contain-string isearch-string buf-content)
+                 (string-match-p isearch-string buf-content)
                  ;; Is the same as the starting file, this prevents infinite loop.
                  (= isearch-project--files-starting-index next-file-index))
-            (setq search-cnt (- search-cnt 1))
+            (cl-decf search-cnt)
             (when (<= search-cnt 0) (setq break-it t)))))
 
       ;; Open the file.
@@ -236,27 +247,6 @@ CNT : search count."
 
       ;; Update current file index.
       (setq isearch-project--files-current-index next-file-index))))
-
-(defun isearch-project--isearch-yank-string (search-str)
-  "Isearch project allow error because we need to search through next file.
-SEARCH-STR : Search string."
-  (ignore-errors (isearch-yank-string search-str)))
-
-(defun isearch-project--isearch-mode-hook ()
-  "Paste the current symbol when `isearch' enabled."
-  (cond ((and (use-region-p)
-              (memq this-command '(isearch-project-forward isearch-project-forward-symbol-at-point)))
-         (let ((search-str (buffer-substring-no-properties (region-beginning) (region-end))))
-           (deactivate-mark)
-           (isearch-project--isearch-yank-string search-str)))
-        ((memq this-command '(isearch-project-forward-symbol-at-point))
-         (when (char-or-string-p isearch-project--thing-at-point)
-           (unless (= (point) (point-max))
-             (forward-char 1))
-           (forward-symbol -1)
-           (isearch-project--isearch-yank-string isearch-project--thing-at-point)))))
-
-(add-hook 'isearch-mode-hook #'isearch-project--isearch-mode-hook)
 
 (provide 'isearch-project)
 ;;; isearch-project.el ends here
