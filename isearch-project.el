@@ -74,6 +74,9 @@ to research from the start.")
   "Record down the symbol while executing
 `isearch-project-forward-symbol-at-point' command.")
 
+(defvar isearch-project-inhibit-yank nil
+  "If non-nil inhibit yank.")
+
 ;;; Util
 
 (defun isearch-project--is-contain-list-string (in-list in-str)
@@ -150,10 +153,11 @@ to research from the start.")
 (defun isearch-project-forward-thing-at-point ()
   "Incremental search thing forward at current point in the project."
   (interactive)
-  (let ((bounds (seq-some (lambda (thing)
-                            (bounds-of-thing-at-point thing))
-                          isearch-forward-thing-at-point)))
-    (setq isearch-project--thing (buffer-substring-no-properties (car bounds) (cdr bounds))))
+  (unless isearch-project--thing
+    (let ((bounds (seq-some (lambda (thing)
+                              (bounds-of-thing-at-point thing))
+                            isearch-forward-thing-at-point)))
+      (setq isearch-project--thing (buffer-substring-no-properties (car bounds) (cdr bounds)))))
   (if (or (use-region-p)
           (char-or-string-p isearch-project--thing))
       (isearch-project-forward)
@@ -164,19 +168,24 @@ to research from the start.")
   "Incremental search forward in the project."
   (interactive)
   (if (isearch-project--prepare)
-      (progn
-        (isearch-project--add-advices)
-        (isearch-forward)
+      (unwind-protect
+          (progn
+            (isearch-project--add-advices)
+            (isearch-backward nil 1)
+            (isearch-forward))
         (isearch-project--remove-advices))
     (error "Cannot isearch project without project directory defined")))
 
 (defun isearch-project--add-advices ()
   "Add all needed advices."
-  (advice-add 'isearch-repeat :after #'isearch-project--advice-isearch-repeat-after))
+  (advice-add 'isearch-repeat :after #'isearch-project--advice-isearch-repeat-after)
+  (setq isearch-message-prefix-add "Project "))
 
 (defun isearch-project--remove-advices ()
   "Remove all needed advices."
-  (advice-remove 'isearch-repeat #'isearch-project--advice-isearch-repeat-after))
+  (advice-remove 'isearch-repeat #'isearch-project--advice-isearch-repeat-after)
+  (setq isearch-message-prefix-add nil
+        isearch-project--thing nil))
 
 (defun isearch-project--find-file-search (fn dt)
   "Open a file and isearch.
@@ -190,7 +199,7 @@ DT : search direction."
   (isearch-search-string isearch-string nil t)
   (let (isearch-project--run-advice)
     (cl-case dt
-      (`forward (isearch-repeat-forward))
+      (`forward  (isearch-repeat-forward))
       (`backward (isearch-repeat-backward)))))
 
 (defun isearch-project--advice-isearch-repeat-after (dt &optional cnt)
@@ -247,6 +256,31 @@ CNT : search count."
 
       ;; Update current file index.
       (setq isearch-project--files-current-index next-file-index))))
+
+(defun isearch-project--isearch-yank-string (search-str)
+  "Isearch project allow error because we need to search through next file.
+SEARCH-STR : Search string."
+  (unless isearch-project-inhibit-yank
+    (ignore-errors (isearch-yank-string search-str))))
+
+(defun isearch-project--isearch-mode-hook ()
+  "Paste the current symbol when `isearch' enabled."
+  (cond ((and (use-region-p)
+              (memq this-command '( isearch-project-forward
+                                    isearch-project-forward-symbol-at-point
+                                    isearch-project-forward-thing-at-point)))
+         (let ((search-str (buffer-substring-no-properties (region-beginning) (region-end))))
+           (deactivate-mark)
+           (isearch-project--isearch-yank-string search-str)))
+        ((memq this-command '( isearch-project-forward-symbol-at-point
+                               isearch-project-forward-thing-at-point))
+         (when (char-or-string-p isearch-project--thing)
+           (unless (eobp)
+             (forward-char 1))
+           (forward-symbol -1)
+           (isearch-project--isearch-yank-string isearch-project--thing)))))
+
+(add-hook 'isearch-mode-hook #'isearch-project--isearch-mode-hook)
 
 (provide 'isearch-project)
 ;;; isearch-project.el ends here
