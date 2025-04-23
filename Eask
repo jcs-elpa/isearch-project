@@ -1,3 +1,5 @@
+;; -*- mode: eask; lexical-binding: t -*-
+
 (package "isearch-project"
          "0.2.6"
          "Incremental search through the whole project")
