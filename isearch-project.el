@@ -1,6 +1,6 @@
 ;;; isearch-project.el --- Incremental search through the whole project  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2019-2025  Shen, Jen-Chieh
+;; Copyright (C) 2019-2026  Shen, Jen-Chieh
 ;; Created date 2019-03-18 15:16:04
 
 ;; Author: Shen, Jen-Chieh <jcs090218@gmail.com>
